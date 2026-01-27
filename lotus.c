@@ -241,7 +241,11 @@ void SetDailyWord()
     SDL_DateTime date_time;
     SDL_GetCurrentTime(&time);
     SDL_TimeToDateTime(time, &date_time, true);
-    SDL_srand(SDL_GetDayOfYear(date_time.year, date_time.month, date_time.day));
+    SDL_srand(SDL_GetDayOfYear(date_time.year, date_time.month, date_time.day) + date_time.year + 1);
+    
+    for (int i = 0; i < 10; i++)
+        SDL_rand(100);
+    
     DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
 }
 
@@ -256,6 +260,8 @@ SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
     SDL_StartTextInput(app->window);
     
     SetDailyWord();
+    
+    SDL_srand(0);
     
     InitMenu(app);
 
