@@ -61,6 +61,8 @@ static const char* WORDS[NUM_WORDS] = {
     "ANIMAL", "PAON", "VAGUE", "CRAVATE", "ROUGE", "TAPIS", "PANIQUE", "VOILE"
 };
 
+int DAILY_WORD_INDEX = 0;
+
 typedef struct Cell
 {
     char letter;
@@ -114,8 +116,10 @@ typedef struct GameState
     bool ended;
     bool won;
     
-    Button won_button;
-    Button lost_button;
+    Button end_button;
+    Button back_button;
+    
+    int streak;
 }GameState;
 
 typedef struct AppState
@@ -149,11 +153,6 @@ Button NewButton(char* text, SDL_FRect rect, void (*callback)(void*), void* user
     return button;
 }
 
-void SetWord(AppState* app)
-{
-    SDL_snprintf(app->game.word, WORD_MAX, "%s", WORDS[SDL_rand(NUM_WORDS)]);
-}
-
 void InitMenu(AppState* app)
 {
     SDL_zero(app->menu);
@@ -161,7 +160,7 @@ void InitMenu(AppState* app)
     SDL_SetRenderLogicalPresentation(app->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
     SDL_FRect rect = {0.0f, 0.0f, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 10};
     rect.x = WINDOW_WIDTH / 2 - rect.w / 2;
-    rect.y = WINDOW_WIDTH / 2 - rect.h / 2 - 25.0f;
+    rect.y = WINDOW_WIDTH / 2 - rect.h / 2 + 5.0f;
     app->menu.buttons[0] = NewButton("Mot du jour", rect, SwitchToDailyGame, app);
     rect.y += 50.0f;
     app->menu.buttons[1] = NewButton("Infini", rect, SwitchToEndlessGame, app);
@@ -170,11 +169,20 @@ void InitMenu(AppState* app)
     app->phase = APP_PHASE_MENU;
 }
 
-void InitGame(AppState* app, GameType type)
+void SetWord(AppState* app)
+{
+    if (app->game.type == GAME_DAILY)
+        SDL_snprintf(app->game.word, WORD_MAX, "%s", WORDS[DAILY_WORD_INDEX]);
+    else
+        SDL_snprintf(app->game.word, WORD_MAX, "%s", WORDS[SDL_rand(NUM_WORDS)]);
+}
+
+void InitGame(AppState* app, GameType type, int streak)
 {
     if (app->game.grid_texture) SDL_DestroyTexture(app->game.grid_texture);
     SDL_zero(app->game);
     
+    app->game.streak = streak;
     app->game.type = type;
     SetWord(app);
     app->game.word_length = SDL_strlen(app->game.word);
@@ -194,17 +202,13 @@ void InitGame(AppState* app, GameType type)
     app->game.grid_texture = SDL_CreateTexture(app->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, app->game.word_length * (FONT_SIZE + 2) - 1, app->game.num_tries * (FONT_SIZE + 2) - 1);
     SDL_SetTextureScaleMode(app->game.grid_texture, SDL_SCALEMODE_NEAREST);
     
-    SDL_FRect rect = {0.0f, 0.0f, 100.0f, 25.0f};
+    SDL_FRect rect = {0.0f, 0.0f, 70.0f, 15.0f};
     rect.x = WINDOW_WIDTH / 2.0f - rect.w / 2.0f;
-    rect.y = WINDOW_HEIGHT - rect.h - 2.0f;
-    app->game.lost_button = NewButton("Menu", rect, Quit, app);
+    rect.y = WINDOW_HEIGHT - rect.h - 6.0f;
+    app->game.back_button = NewButton("<", (SDL_FRect){2.0f, 2.0f, 20.0f, 20.0f}, Quit, app);
     if (type == GAME_ENDLESS)
     {
-        app->game.won_button = NewButton("Suivant", rect, Retry, app);
-    }
-    else if (type == GAME_DAILY)
-    {
-        app->game.won_button = app->game.lost_button;
+        app->game.end_button = NewButton("Suivant", rect, Retry, app);
     }
     
     app->phase = APP_PHASE_GAME;
@@ -213,7 +217,7 @@ void InitGame(AppState* app, GameType type)
 void Retry(void* userdata)
 {
     AppState* app = userdata;
-    InitGame(app, app->game.type);
+    InitGame(app, app->game.type, app->game.won ? app->game.streak + 1 : 0);
 }
 
 void Quit(void* userdata)
@@ -223,12 +227,22 @@ void Quit(void* userdata)
 
 void SwitchToDailyGame(void* userdata)
 {
-    InitGame(userdata, GAME_DAILY);
+    InitGame(userdata, GAME_DAILY, 0);
 }
 
 void SwitchToEndlessGame(void* userdata)
 {
-    InitGame(userdata, GAME_ENDLESS);
+    InitGame(userdata, GAME_ENDLESS, 0);
+}
+
+void SetDailyWord()
+{
+    SDL_Time time;
+    SDL_DateTime date_time;
+    SDL_GetCurrentTime(&time);
+    SDL_TimeToDateTime(time, &date_time, true);
+    SDL_srand(SDL_GetDayOfYear(date_time.year, date_time.month, date_time.day));
+    DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
 }
 
 SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
@@ -240,7 +254,8 @@ SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
     EXPECT(SDL_CreateWindowAndRenderer("Lotus", 800, 800, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
     SDL_StartTextInput(app->window);
-    SDL_srand(0);
+    
+    SetDailyWord();
     
     InitMenu(app);
 
@@ -373,12 +388,11 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
                     HandleButtonClick(app, &app->menu.buttons[i], position);
                 }
             }
-            else if (app->phase == APP_PHASE_GAME && app->game.ended)
+            else if (app->phase == APP_PHASE_GAME)
             {
-                if (app->game.won)
-                    HandleButtonClick(app, &app->game.won_button, position);
-                else
-                    HandleButtonClick(app, &app->game.lost_button, position);
+                HandleButtonClick(app, &app->game.back_button, position);
+                if (app->game.ended && app->game.type == GAME_ENDLESS)
+                    HandleButtonClick(app, &app->game.end_button, position);
             }
         }
     }
@@ -400,6 +414,10 @@ void RenderButton(AppState* app, const Button* button)
 
 void RenderMenu(AppState* app)
 {
+    SDL_SetRenderScale(app->renderer, 2.0f, 2.0f);
+    SDL_SetRenderDrawColor(app->renderer, 255, 50, 50, 255);
+    SDL_RenderDebugText(app->renderer, WINDOW_WIDTH / 4.0 - 5 * FONT_SIZE / 2, 30.0f, "LOTUS");
+    SDL_SetRenderScale(app->renderer, 1.0f, 1.0f);
     for (int i = 0; i < app->menu.num_buttons; i++)
     {
         RenderButton(app, &app->menu.buttons[i]);
@@ -434,17 +452,21 @@ void RenderGame(AppState* app)
     rect.y = 30.0f;
     SDL_RenderTexture(app->renderer, app->game.grid_texture, NULL, &rect);
     
+    RenderButton(app, &app->game.back_button);
+    SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
+    if (app->game.type == GAME_ENDLESS)
+        SDL_RenderDebugTextFormat(app->renderer, 0.0f, WINDOW_HEIGHT - FONT_SIZE, "streak %d", app->game.streak);
+    
     if (app->game.ended)
     {
-        if (app->game.won)
+        if (app->game.type == GAME_ENDLESS)
         {
-            RenderButton(app, &app->game.won_button);
+            RenderButton(app, &app->game.end_button);
         }
-        else
+        if (!app->game.won)
         {
             SDL_SetRenderDrawColor(app->renderer, 255, 50, 50, 255);
             SDL_RenderDebugText(app->renderer, WINDOW_WIDTH / 2.0f - app->game.word_length * FONT_SIZE / 2.0f, 15.0f - FONT_SIZE / 2.0f, app->game.word);
-            RenderButton(app, &app->game.lost_button);
         }
     }
 }
