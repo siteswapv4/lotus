@@ -306,7 +306,7 @@ SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
     *userdata = app;
     
     EXPECT(SDL_Init(SDL_INIT_VIDEO), "%s", SDL_GetError());
-    EXPECT(SDL_CreateWindowAndRenderer("Lotus", 800, 800, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
+    EXPECT(SDL_CreateWindowAndRenderer("Lotus", 500, 700, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
     SDL_StartTextInput(app->window);
     
