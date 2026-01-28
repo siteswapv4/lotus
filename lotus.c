@@ -25,41 +25,9 @@ static const SDL_Color RIGHT_COLOR   = {255, 0, 0, 255};
 static const SDL_Color PRESENT_COLOR = {255, 150, 0, 255};
 static const SDL_Color EMPTY_COLOR   = {0, 0, 0, 255};
 
-#define NUM_WORDS 297
-static const char* WORDS[NUM_WORDS] = {
-    "ABAT", "ABIME", "ABOND", "ACCUEIL", "ACIDE", "ACTEUR", "ADIEU", "AGENT", "AGIR", "ALICE", 
-    "AMOUR", "ANIMAL", "APPETIT", "ARBRE", "ARGENT", "ARMEE", "ARTISTE", "ASTUCE", "AUBE", "AUTRE", 
-    "AVION", "BALLE", "BANQUE", "BARRE", "BASE", "BASQUET", "BESOIN", "BLANC", "BLESSER", "BOISSON", 
-    "BOUCLE", "BOUTON", "BRAVO", "BULLE", "CAMPE", "CANAL", "CARRE", "CAVALIER", "CHANT", "CHAOS", 
-    "CHAUFFAGE", "CHEVAL", "CHOSE", "CIGARETTE", "CINEMA", "CLINIQUE", "CLOCHER", "COEUR", "COLLE", 
-    "CONSEIL", "CORPS", "COTON", "COURIR", "CRANE", "CRISE", "CROIX", "CUIR", "DANGER", "DART", 
-    "DEBAT", "DEMAIN", "DESSIN", "DIALOGUE", "DIFFUSION", "DOUCEUR", "DROIT", "DURER", "ECRIRE", 
-    "EFFECTIF", "EMPLOI", "ENFER", "ENVOI", "EQUIPE", "ESCAPE", "FABLE", "FAIRE", "FETE", "FLOTTANT", 
-    "FONCTION", "FORCE", "FORUM", "FOUR", "FRIEND", "GENIE", "GROUPE", "GUERRE", "HOMME", "IMMEUBLE", 
-    "INVENTER", "JOIE", "JOUEUR", "JOUR", "JUMELLE", "KIF", "LIVRE", "LUMIERE", "MAGIE", "MAIRE", 
-    "MARCHER", "MASSAGE", "MATHS", "MEILLEUR", "MELANGE", "MINES", "MOBILE", "MONTAGNE", "MOTIF", 
-    "MOUVEMENT", "MUR", "NATURE", "NEIGE", "NOUVEAU", "NUIT", "NUMERO", "OCCUPER", "ONZE", 
-    "OPERATION", "ORANGE", "ORDRE", "OUTIL", "PAPIER", "PARIS", "PAYER", "PERDU", "PERSONNE", 
-    "PIERRE", "PLAGE", "PLAISIR", "POINT", "POMME", "PORT", "PREMIER", "PRIX", "PRODUIRE", 
-    "RANGE", "RECHERCHER", "REPARTIR", "REUSSIR", "RIDEAU", "ROUGE", "SALLE", "SAVOIR", "SILENCE", 
-    "SOMME", "SON", "SORTIE", "SOUFFLE", "SOURIRE", "SOUVENIR", "SPECTACLE", "SPORT", "SUCRE", 
-    "TACHE", "TABLE", "TACHE", "TANT", "TEXTE", "THEME", "TIGRE", "TONNERRE", "TOUR", "VAGUE", 
-    "VAPEUR", "VENT", "VIE", "VIEUX", "VIRAGE", "VOLER", "VOIE", "VOIR", "VOL", "VOYAGE", 
-    "ZEBRE", "ZONER", "ZEROS", "ZOUK", "ZEN", "SOURIS", "SOLIDE", "RAPIDE", "POLICE", "RIVIERA", 
-    "LUXE", "BOND", "PANDAS", "ZOMBIE", "ANALYSE", "PORTIER", "MOULE", "RAMES", "MIRE", "RISQUE", 
-    "TREVE", "NAGER", "HAUTEUR", "DECOUPER", "VIGIE", "MONDE", "POMMEAU", "REGLE", "FACILE", 
-    "TROIS", "SOMBRE", "VIRTUE", "QUATRE", "CINQ", "AIMER", "FAMILLE", "MONTER", "NOUVEAU", 
-    "MELON", "TISANE", "SALAIRE", "TEST", "BATEAU", "PHOQUE", "DERIVE", "MALIN", "GRAINE", 
-    "ANNEAU", "AVENTURE", "LOUP", "REGAL", "CAVALIER", "BOL", "REVOIR", "COUTEAU", "PAROLE", 
-    "BOLIDE", "GLOBE", "EXAMEN", "TOUS", "ORIGINE", "DRAME", "ACIER", "DOLCE", "PLANTER", 
-    "BOL", "MENTIR", "FLOP", "SAVOIR", "CHIFFRE", "ECLAT", "TAUX", "VAMPIRE", "PORTE", 
-    "LANCE", "DOIGT", "BATON", "PLIE", "ARGILE", "MER", "SOL", "FOU", "POUR", "METAL", 
-    "RANGER", "TOURNER", "MOLLE", "VOITURE", "GENOU", "PRENOM", "PREMIER", "SQUELETTE", 
-    "HIVER", "PELOTE", "POTERIE", "LIRE", "VALEUR", "HAUT", "ORDRE", "SOMME", "AMBRE", 
-    "PRIER", "FOURNEAU", "FANATIQUE", "ZEBRA", "MUSE", "LOUE", "PENDRE", "CALME", 
-    "DOSE", "NIVEAU", "PIPER", "SOMME", "RAFALE", "NUAGE", "MOULIN", "PAIRE", 
-    "ANIMAL", "PAON", "VAGUE", "CRAVATE", "ROUGE", "TAPIS", "PANIQUE", "VOILE"
-};
+char* WORD_FILE = NULL;
+int NUM_WORDS = 0;
+char** WORDS = NULL;
 
 int DAILY_WORD_INDEX = 0;
 
@@ -186,7 +154,7 @@ void InitGame(AppState* app, GameType type, int streak)
     app->game.type = type;
     SetWord(app);
     app->game.word_length = SDL_strlen(app->game.word);
-    app->game.num_tries = 8;
+    app->game.num_tries = 6;
     
     for (int i = 0; i < app->game.num_tries; i++)
     {
@@ -249,6 +217,60 @@ void SetDailyWord()
     DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
 }
 
+void LoadWords(AppState* app)
+{
+    char* path = NULL;
+    SDL_asprintf(&path, "%s/words.txt", SDL_GetBasePath());
+    WORD_FILE = SDL_LoadFile(path, NULL);
+    SDL_free(path);
+    
+    SDL_sscanf(WORD_FILE, "%d", &NUM_WORDS);
+    WORDS = SDL_malloc(NUM_WORDS * sizeof(char*));
+    char* start = SDL_strchr(WORD_FILE, '\n') + 1;
+    char* end = SDL_strchr(start, '\n');
+    
+    for (int i = 0; i < NUM_WORDS; i++)
+    {
+        WORDS[i] = start;
+        if (end)
+        {
+            *end = '\0';
+            start = end + 1;
+            end = SDL_strchr(start, '\n');
+        }
+    }
+}
+
+bool WordExists(const char* word)
+{
+    int left = 0;
+    int right = NUM_WORDS - 1;
+
+    while (left <= right)
+    {
+        int mid = left + (right - left) / 2;
+        int cmp = SDL_strcmp(word, WORDS[mid]);
+
+        if (cmp == 0)
+            return true;
+        else if (cmp < 0)
+            right = mid - 1;
+        else
+            left = mid + 1;
+    }
+
+    return false;
+}
+
+void WordFromGridLine(AppState* app, int index, char word[WORD_MAX])
+{
+    for (int i = 0; i < app->game.word_length; i++)
+    {
+        word[i] = app->game.grid[index][i].letter;
+        word[i + 1] = '\0';
+    }
+}
+
 SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
 {
     AppState* app = SDL_calloc(1, sizeof(AppState));
@@ -258,6 +280,8 @@ SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
     EXPECT(SDL_CreateWindowAndRenderer("Lotus", 800, 800, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
     SDL_StartTextInput(app->window);
+    
+    LoadWords(app);
     
     SetDailyWord();
     
@@ -319,6 +343,12 @@ void Evaluate(AppState* app)
         app->game.ended = true;
         app->game.won = false;
     }
+    else
+    {
+        app->game.grid[app->game.current_try][0].letter = app->game.word[0];
+        app->game.grid[app->game.current_try][0].color = RIGHT_COLOR;
+        app->game.current_letter++;
+    }
 }
 
 void HandleButtonClick(AppState* app, const Button* button, SDL_FPoint position)
@@ -363,7 +393,7 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
         {
             if (app->phase == APP_PHASE_GAME && !app->game.ended)
             {
-                if ((app->game.current_letter > 0) && ((app->game.current_try != 0) || (app->game.current_letter != 1)))
+                if (app->game.current_letter > 1)
                 {
                     app->game.current_letter--;
                     app->game.grid[app->game.current_try][app->game.current_letter].letter = '\0';
@@ -372,13 +402,22 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
         }
         else if (event->key.scancode == SDL_SCANCODE_RETURN)
         {
-            if (app->phase == APP_PHASE_GAME && !app->game.ended)
+            if ((app->phase == APP_PHASE_GAME) && !app->game.ended)
             {
                 if (app->game.current_letter == app->game.word_length)
                 {
-                    Evaluate(app);
+                    char word[WORD_MAX];
+                    WordFromGridLine(app, app->game.current_try, word);
+                    if (WordExists(word))
+                    {
+                        Evaluate(app);
+                    }
                 }
             }
+        }
+        else if (event->key.scancode == SDL_SCANCODE_F11)
+        {
+            SDL_SetWindowFullscreen(app->window, !(SDL_GetWindowFlags(app->window) & SDL_WINDOW_FULLSCREEN));
         }
     }
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN)
@@ -452,10 +491,10 @@ void RenderGame(AppState* app)
     SDL_SetRenderTarget(app->renderer, NULL);
     
     float ratio = app->game.grid_texture->w / (float)app->game.grid_texture->h;
-    SDL_FRect rect = {0.0f, 0.0f, 0.0f, WINDOW_HEIGHT - 60.0f};
-    rect.w = rect.h * ratio;
+    SDL_FRect rect = {0.0f, 0.0f, WINDOW_WIDTH, 0};
+    rect.h = rect.w / ratio;
     rect.x = WINDOW_WIDTH / 2.0f - rect.w / 2.0f;
-    rect.y = 30.0f;
+    rect.y = WINDOW_HEIGHT / 2.0f - rect.h / 2.0f;
     SDL_RenderTexture(app->renderer, app->game.grid_texture, NULL, &rect);
     
     RenderButton(app, &app->game.back_button);
@@ -496,5 +535,7 @@ SDL_AppResult SDL_AppIterate(void* userdata)
 
 void SDL_AppQuit(void* userdata, SDL_AppResult result)
 {
+    if (WORD_FILE) SDL_free(WORD_FILE);
+    if (WORDS) SDL_free(WORDS);
     if (userdata) SDL_free(userdata);
 }
