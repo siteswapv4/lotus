@@ -472,6 +472,35 @@ void RenderMenu(AppState* app)
     }
 }
 
+void RenderGrid(AppState* app)
+{
+    float ratio = app->game.grid_texture->w / (float)app->game.grid_texture->h;
+
+    // Maximum allowed width and height
+    float max_w = (float)WINDOW_WIDTH;
+    float max_h = (float)WINDOW_HEIGHT - 60.0f;
+
+    // Start with width = max_w, compute height from aspect ratio
+    float w = max_w;
+    float h = w / ratio;
+
+    // If height exceeds max_h, scale down to max_h
+    if (h > max_h) {
+        h = max_h;
+        w = h * ratio; // adjust width to maintain aspect ratio
+    }
+
+    // Center the rect
+    SDL_FRect rect;
+    rect.w = w;
+    rect.h = h;
+    rect.x = (WINDOW_WIDTH - w) / 2.0f;
+    rect.y = (WINDOW_HEIGHT - h) / 2.0f;
+
+    // Render
+    SDL_RenderTexture(app->renderer, app->game.grid_texture, NULL, &rect);
+}
+
 void RenderGame(AppState* app)
 {
     SDL_SetRenderTarget(app->renderer, app->game.grid_texture);
@@ -493,12 +522,7 @@ void RenderGame(AppState* app)
     
     SDL_SetRenderTarget(app->renderer, NULL);
     
-    float ratio = app->game.grid_texture->w / (float)app->game.grid_texture->h;
-    SDL_FRect rect = {0.0f, 0.0f, WINDOW_WIDTH, 0};
-    rect.h = rect.w / ratio;
-    rect.x = WINDOW_WIDTH / 2.0f - rect.w / 2.0f;
-    rect.y = WINDOW_HEIGHT / 2.0f - rect.h / 2.0f;
-    SDL_RenderTexture(app->renderer, app->game.grid_texture, NULL, &rect);
+    RenderGrid(app);
     
     RenderButton(app, &app->game.back_button);
     SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
