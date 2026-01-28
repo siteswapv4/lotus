@@ -346,7 +346,7 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
             if (app->game.current_letter < app->game.word_length)
             {
                 char letter = event->text.text[0];
-                if ((letter >= 'A') && (letter <= 'z'))
+                if (((letter >= 'A') && (letter <= 'Z')) || ((letter >= 'a') && (letter <= 'z')))
                 {
                     if ((letter >= 'a') && (letter <= 'z'))
                         letter -= 'a' - 'A';
