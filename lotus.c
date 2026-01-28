@@ -381,8 +381,11 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
                     if ((letter >= 'a') && (letter <= 'z'))
                         letter -= 'a' - 'A';
                         
-                    app->game.grid[app->game.current_try][app->game.current_letter].letter = letter;
-                    app->game.current_letter++;
+                    if ((app->game.current_letter != 1) || (app->game.grid[app->game.current_try][0].letter != letter))
+                    {
+                        app->game.grid[app->game.current_try][app->game.current_letter].letter = letter;
+                        app->game.current_letter++;
+                    }
                 }
             }
         }
