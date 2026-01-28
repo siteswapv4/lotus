@@ -12,8 +12,8 @@
         } \
     }while (0)
 
-#define WINDOW_WIDTH 250
-#define WINDOW_HEIGHT 350
+#define WINDOW_WIDTH 225
+#define WINDOW_HEIGHT 400
 
 #define BUTTON_MAX 10
 #define WORD_MAX 255
@@ -141,9 +141,9 @@ void InitMenu(AppState* app)
     SDL_SetRenderLogicalPresentation(app->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
     SDL_FRect rect = {0.0f, 0.0f, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 10};
     rect.x = WINDOW_WIDTH / 2 - rect.w / 2;
-    rect.y = WINDOW_HEIGHT / 2 - rect.h / 2 + 5.0f;
+    rect.y = WINDOW_HEIGHT / 2 - rect.h / 2;
     app->menu.buttons[0] = NewButton("Mot du jour", rect, SwitchToDailyGame, app);
-    rect.y += 50.0f;
+    rect.y += 75.0f;
     app->menu.buttons[1] = NewButton("Infini", rect, SwitchToEndlessGame, app);
     app->menu.num_buttons = 2;
     
@@ -186,25 +186,27 @@ void InitGame(AppState* app, GameType type, int streak)
     app->game.back_button = NewButton("<", (SDL_FRect){5.0f, 5.0f, 20.0f, 20.0f}, Quit, app);
     if (type == GAME_ENDLESS)
     {
-        SDL_FRect rect = {0.0f, 0.0f, 70.0f, 15.0f};
+        SDL_FRect rect = {0.0f, 0.0f, 75.0f, 25.0f};
         rect.x = WINDOW_WIDTH / 2.0f - rect.w / 2.0f;
-        rect.y = WINDOW_HEIGHT - rect.h - 15.0f;
+        rect.y = WINDOW_HEIGHT - rect.h - 25.0f;
         app->game.end_button = NewButton("Suivant", rect, Retry, app);
     }
     
+    float base_height = 260.0f;
+    float key_size = 22.0f;
     for (int i = 0; i < 10; i++)
     {
-        SDL_FRect rect = {2.0f + 25.0f * i, 225.0f, 20.0f, 20.0f};
+        SDL_FRect rect = {2.0f + key_size * i, base_height, key_size, key_size};
         app->game.buttons[i] = NewButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, rect, ButtonKeyPress, app);
     }
     for (int i = 10; i < 20; i++)
     {
-        SDL_FRect rect = {2.0f + 25.0f * (i - 10), 250.0f, 20.0f, 20.0f};
+        SDL_FRect rect = {2.0f + key_size * (i - 10), base_height + key_size, key_size, key_size};
         app->game.buttons[i] = NewButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, rect, ButtonKeyPress, app);
     }
     for (int i = 20; i < 28; i++)
     {
-        SDL_FRect rect = {2.0f + 25.0f * (i - 19), 275.0f, 20.0f, 20.0f};
+        SDL_FRect rect = {2.0f + key_size * (i - 19), base_height + key_size * 2.0f, key_size, key_size};
         app->game.buttons[i] = NewButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, rect, ButtonKeyPress, app);
     }
     
@@ -306,8 +308,8 @@ SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
     *userdata = app;
     
     EXPECT(SDL_Init(SDL_INIT_VIDEO), "%s", SDL_GetError());
-    EXPECT(SDL_CreateWindowAndRenderer("Lotus", 500, 700, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
-    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
+    EXPECT(SDL_CreateWindowAndRenderer("Lotus", 450, 800, SDL_WINDOW_RESIZABLE, &app->window, &app->renderer), "%s", SDL_GetError());
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
     SDL_StartTextInput(app->window);
     
     LoadWords(app);
@@ -414,7 +416,13 @@ void RemoveLetter(AppState* app)
 void ConfirmWord(AppState* app)
 {
     if (app->phase != APP_PHASE_GAME) return;
-    if (app->game.ended) return;
+    if (app->game.ended)
+    {
+        if (app->game.type == GAME_ENDLESS)
+            Retry(app, NULL);
+        return;
+    }
+    
     if (app->game.current_letter != app->game.word_length) return;
     
     char word[WORD_MAX];
@@ -460,6 +468,11 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
         else if (event->key.scancode == SDL_SCANCODE_RETURN)
         {
             ConfirmWord(app);
+        }
+        else if (event->key.scancode == SDL_SCANCODE_ESCAPE)
+        {
+            if (app->phase == APP_PHASE_GAME)
+                InitMenu(app);
         }
         else if (event->key.scancode == SDL_SCANCODE_F11)
         {
@@ -514,6 +527,8 @@ void RenderMenu(AppState* app)
     SDL_SetRenderScale(app->renderer, 1.0f, 1.0f);
     for (int i = 0; i < app->menu.num_buttons; i++)
         RenderButton(app, &app->menu.buttons[i]);
+    SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
+    SDL_RenderDebugText(app->renderer, 0.0f, WINDOW_HEIGHT - FONT_SIZE, "siteswapv4");
 }
 
 void RenderGrid(AppState* app)
@@ -521,7 +536,7 @@ void RenderGrid(AppState* app)
     float ratio = app->game.grid_texture->w / (float)app->game.grid_texture->h;
 
     float max_w = (float)WINDOW_WIDTH;
-    float max_h = (float)WINDOW_HEIGHT - 170.0f;
+    float max_h = (float)WINDOW_HEIGHT;
 
     float w = max_w;
     float h = w / ratio;
@@ -535,7 +550,7 @@ void RenderGrid(AppState* app)
     rect.w = w;
     rect.h = h;
     rect.x = (WINDOW_WIDTH - w) / 2.0f;
-    rect.y = 35.0f;
+    rect.y = 50.0f;
 
     SDL_RenderTexture(app->renderer, app->game.grid_texture, NULL, &rect);
 }
@@ -570,7 +585,7 @@ void RenderGame(AppState* app)
     
     SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
     if (app->game.type == GAME_ENDLESS)
-        SDL_RenderDebugTextFormat(app->renderer, 0.0f, WINDOW_HEIGHT - FONT_SIZE - 15.0f, "streak %d", app->game.streak);
+        SDL_RenderDebugTextFormat(app->renderer, 0.0f, WINDOW_HEIGHT - FONT_SIZE, "streak %d", app->game.streak);
     
     if (app->game.ended)
     {
@@ -580,8 +595,11 @@ void RenderGame(AppState* app)
         }
         if (!app->game.won)
         {
+            float scale = 2.0f;
             SDL_SetRenderDrawColor(app->renderer, 255, 50, 50, 255);
-            SDL_RenderDebugText(app->renderer, WINDOW_WIDTH / 2.0f - app->game.word_length * FONT_SIZE / 2.0f, 15.0f - FONT_SIZE / 2.0f, app->game.word);
+            SDL_SetRenderScale(app->renderer, scale, scale);
+            SDL_RenderDebugText(app->renderer, ((WINDOW_WIDTH / 2.0f) - (app->game.word_length * (FONT_SIZE * scale) / 2.0f)) / scale, (25.0f - (FONT_SIZE * scale) / 2.0f) / scale, app->game.word);
+            SDL_SetRenderScale(app->renderer, 1.0f, 1.0f);
         }
     }
 }
