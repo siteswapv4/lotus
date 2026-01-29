@@ -138,8 +138,12 @@ void ConfirmWord(GameState* game)
     if (game->current_letter != game->word_length) return;
 
     char* word = WordFromGridLine(game, game->current_try);
+    SDL_Log("in");
     if (WordExists(word))
+    {
         Evaluate(game);
+        SDL_Log("in2");
+    }
     SDL_free(word);
 }
 
