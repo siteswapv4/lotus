@@ -20,4 +20,4 @@ bool InitContext();
 
 void SetRenderDrawColor(SDL_Color color);
 
-void DestroyContext();
+void QuitContext();

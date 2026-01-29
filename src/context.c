@@ -12,8 +12,7 @@ bool InitContext()
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
     SDL_StartTextInput(window);
     
-    LoadWords();
-    SetDailyWord();
+    InitWords();
     SDL_srand(0);
 
     return true;
@@ -27,7 +26,7 @@ void SetRenderDrawColor(SDL_Color color)
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
-void DestroyContext()
+void QuitContext()
 {
-    DestroyWords();
+    QuitWords();
 }

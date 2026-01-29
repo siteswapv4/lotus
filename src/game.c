@@ -161,9 +161,9 @@ GameState* CreateGame(GameType type, int streak)
     game->type = type;
     
     if (type == GAME_DAILY)
-        game->word = SDL_strdup(WORDS[DAILY_WORD_INDEX]);
+        game->word = SDL_strdup(GetDailyWord());
     else
-        game->word = SDL_strdup(WORDS[SDL_rand(NUM_WORDS)]);
+        game->word = SDL_strdup(GetRandomWord());
     game->word_length = SDL_strlen(game->word);
     
     game->num_tries = NUM_TRIES;

@@ -1,14 +1,12 @@
 #pragma once
 #include <SDL3/SDL.h>
 
-extern int NUM_WORDS;
-extern char** WORDS;
-extern int DAILY_WORD_INDEX;
-
-void SetDailyWord();
-
-void LoadWords();
+void InitWords();
 
 bool WordExists(const char* word);
 
-void DestroyWords();
+const char* GetDailyWord();
+
+const char* GetRandomWord();
+
+void QuitWords();

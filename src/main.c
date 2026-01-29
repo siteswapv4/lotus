@@ -121,7 +121,7 @@ void SDL_AppQuit(void* userdata, SDL_AppResult result)
     if (app->menu) DestroyMenu(app->menu);
     if (app->game) DestroyGame(app->game);
 
-    DestroyContext();
+    QuitContext();
 
     SDL_free(app);
 }

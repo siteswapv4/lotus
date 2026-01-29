@@ -1,24 +1,9 @@
 #include "word.h"
 
 static char* WORD_FILE = NULL;
-
-int NUM_WORDS = 0;
-char** WORDS = NULL;
-int DAILY_WORD_INDEX = 0;
-
-void SetDailyWord()
-{
-    SDL_Time time;
-    SDL_DateTime date_time;
-    SDL_GetCurrentTime(&time);
-    SDL_TimeToDateTime(time, &date_time, true);
-    SDL_srand(SDL_GetDayOfYear(date_time.year, date_time.month, date_time.day) + date_time.year + 1);
-    
-    for (int i = 0; i < 10; i++)
-        SDL_rand(100);
-    
-    DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
-}
+static int NUM_WORDS = 0;
+static char** WORDS = NULL;
+static int DAILY_WORD_INDEX = 0;
 
 void LoadWords()
 {
@@ -44,6 +29,20 @@ void LoadWords()
     }
 }
 
+void SetDailyWord()
+{
+    SDL_Time time;
+    SDL_DateTime date_time;
+    SDL_GetCurrentTime(&time);
+    SDL_TimeToDateTime(time, &date_time, true);
+    SDL_srand(SDL_GetDayOfYear(date_time.year, date_time.month, date_time.day) + date_time.year + 1);
+    
+    for (int i = 0; i < 10; i++)
+        SDL_rand(100);
+    
+    DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
+}
+
 bool WordExists(const char* word)
 {
     int left = 0;
@@ -65,7 +64,23 @@ bool WordExists(const char* word)
     return false;
 }
 
-void DestroyWords()
+void InitWords()
+{
+    LoadWords();
+    SetDailyWord();
+}
+
+const char* GetDailyWord()
+{
+    return WORDS[DAILY_WORD_INDEX];
+}
+
+const char* GetRandomWord()
+{
+    return WORDS[SDL_rand(NUM_WORDS)];
+}
+
+void QuitWords()
 {
     if (WORD_FILE) SDL_free(WORD_FILE);
     WORD_FILE = NULL;
