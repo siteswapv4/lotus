@@ -1,25 +1,25 @@
 #include "word.h"
 
-static char* WORD_FILE = NULL;
-static int NUM_WORDS = 0;
-static char** WORDS = NULL;
-static int DAILY_WORD_INDEX = 0;
+static char* words_file = NULL;
+static int num_words = 0;
+static char** words = NULL;
+static int daily_word_index = 0;
 
 void LoadWords()
 {
     char* path = NULL;
     SDL_asprintf(&path, "%s/data/words.txt", SDL_GetBasePath());
-    WORD_FILE = SDL_LoadFile(path, NULL);
+    words_file = SDL_LoadFile(path, NULL);
     SDL_free(path);
     
-    SDL_sscanf(WORD_FILE, "%d", &NUM_WORDS);
-    WORDS = SDL_malloc(NUM_WORDS * sizeof(char*));
-    char* start = SDL_strchr(WORD_FILE, '\n') + 1;
+    SDL_sscanf(words_file, "%d", &num_words);
+    words = SDL_malloc(num_words * sizeof(char*));
+    char* start = SDL_strchr(words_file, '\n') + 1;
     char* end = SDL_strchr(start, '\n');
 
-    for (int i = 0; i < NUM_WORDS; i++)
+    for (int i = 0; i < num_words; i++)
     {
-        WORDS[i] = start;
+        words[i] = start;
         if (end)
         {
             *end = '\0';
@@ -40,18 +40,18 @@ void SetDailyWord()
     for (int i = 0; i < 10; i++)
         SDL_rand(100);
     
-    DAILY_WORD_INDEX = SDL_rand(NUM_WORDS);
+    daily_word_index = SDL_rand(num_words);
 }
 
 bool WordExists(const char* word)
 {
     int left = 0;
-    int right = NUM_WORDS - 1;
+    int right = num_words - 1;
 
     while (left <= right)
     {
         int mid = left + (right - left) / 2;
-        int cmp = SDL_strcmp(word, WORDS[mid]);
+        int cmp = SDL_strcmp(word, words[mid]);
 
         if (cmp == 0)
             return true;
@@ -66,22 +66,26 @@ bool WordExists(const char* word)
 
 void InitWords()
 {
+    if (words_file) return;
+
     LoadWords();
     SetDailyWord();
 }
 
 const char* GetDailyWord()
 {
-    return WORDS[DAILY_WORD_INDEX];
+    return words[daily_word_index];
 }
 
 const char* GetRandomWord()
 {
-    return WORDS[SDL_rand(NUM_WORDS)];
+    return words[SDL_rand(num_words)];
 }
 
 void QuitWords()
 {
-    if (WORD_FILE) SDL_free(WORD_FILE);
-    WORD_FILE = NULL;
+    if (!words_file) return;
+
+    SDL_free(words_file);
+    words_file = NULL;
 }
