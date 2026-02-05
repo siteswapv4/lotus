@@ -5,16 +5,24 @@
 
 #define NUM_TRIES 6
 
-const SDL_Color RIGHT_COLOR      = {255, 0, 0, 255};
-const SDL_Color PRESENT_COLOR    = {255, 150, 0, 255};
-const SDL_Color EMPTY_COLOR      = {0x2E, 0x00, 0x6C, 255};
-
 #define NUM_KEYBOARD_BUTTONS 28
 static const char KEYBOARD_BUTTONS_CHAR[NUM_KEYBOARD_BUTTONS] = {
     'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
     'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z',
     'X', 'C', 'V', 'B', 'N', 'M', '<', '>'
 };
+
+typedef enum LetterType
+{
+    LETTER_PRESENT,
+    LETTER_RIGHT,
+    LETTER_WRONG
+}LetterType;
+
+const SDL_Color COLORS[3] = {{255, 150, 0, 255}, {255, 0, 0, 255}, {150, 150, 150, 255}};
+const SDL_Color EMPTY_COLOR      = {0x2E, 0x00, 0x6C, 255};
+
+const int KEYBOARD_INDICES[26] = {10, 23, 21, 12, 2, 13, 14, 15, 7, 16, 17, 18, 25, 24, 8, 9, 0, 3, 11, 4, 6, 22, 1, 20, 5, 19};
 
 typedef struct Cell
 {
@@ -69,6 +77,24 @@ bool Solved(GameState* game, const Cell* solution)
     return true;
 }
 
+bool ColorEquals(const SDL_Color* c1, const SDL_Color* c2)
+{
+    return (c1->r == c2->r) && (c1->g == c2->g) && (c1->b == c2->b) && (c1->a == c2->a);
+}
+
+void SetKeyColor(GameState* game, char letter, LetterType type)
+{
+    int index = letter - 'A';
+
+    Button* button = game->buttons[KEYBOARD_INDICES[index]];
+    SDL_Color color = GetButtonColor(button);
+
+    if (ColorEquals(&color, &COLORS[LETTER_RIGHT])) return;
+    if (((ColorEquals(&color, &COLORS[LETTER_RIGHT])) || (ColorEquals(&color, &COLORS[LETTER_PRESENT]))) && (type == LETTER_WRONG)) return;
+
+    SetButtonColor(button, &COLORS[type]);
+}
+
 void Evaluate(GameState* game)
 {
     int occurences[26] = {0};
@@ -86,11 +112,21 @@ void Evaluate(GameState* game)
         if (occurences[index] > 0)
         {
             if (game->word[i] == letter)
-                game->grid[game->current_try][i].color = RIGHT_COLOR;
+            {
+                game->grid[game->current_try][i].color = COLORS[LETTER_RIGHT];
+                SetKeyColor(game, letter, LETTER_RIGHT);
+            }
             else
-                game->grid[game->current_try][i].color = PRESENT_COLOR;
+            {
+                game->grid[game->current_try][i].color = COLORS[LETTER_PRESENT];
+                SetKeyColor(game, letter, LETTER_PRESENT);
+            }
                 
             occurences[index]--;
+        }
+        else
+        {
+            SetKeyColor(game, letter, LETTER_WRONG);
         }
     }
 
@@ -110,7 +146,7 @@ void Evaluate(GameState* game)
     else
     {
         game->grid[game->current_try][0].letter = game->word[0];
-        game->grid[game->current_try][0].color = RIGHT_COLOR;
+        game->grid[game->current_try][0].color = COLORS[LETTER_RIGHT];
         game->current_letter++;
     }
 }
@@ -138,11 +174,9 @@ void ConfirmWord(GameState* game)
     if (game->current_letter != game->word_length) return;
 
     char* word = WordFromGridLine(game, game->current_try);
-    SDL_Log("in");
     if (WordExists(word))
     {
         Evaluate(game);
-        SDL_Log("in2");
     }
     SDL_free(word);
 }
@@ -182,7 +216,7 @@ GameState* CreateGame(GameType type, int streak)
         }
     }
     
-    game->grid[0][0] = (Cell){game->word[0], RIGHT_COLOR};
+    game->grid[0][0] = (Cell){game->word[0], COLORS[LETTER_RIGHT]};
     game->current_letter++;
     
     game->grid_texture = SDL_CreateTexture(renderer, 
@@ -193,13 +227,13 @@ GameState* CreateGame(GameType type, int streak)
 
     SDL_SetTextureScaleMode(game->grid_texture, SDL_SCALEMODE_NEAREST);
     
-    game->back_button = CreateButton("<", &(SDL_FRect){5.0f, 5.0f, 20.0f, 20.0f});
+    game->back_button = CreateButton("<", &(SDL_FRect){5.0f, 5.0f, 20.0f, 20.0f}, &BACKGROUND_COLOR);
     if (type == GAME_ENDLESS)
     {
         SDL_FRect rect = {0.0f, 0.0f, 75.0f, 25.0f};
         rect.x = WINDOW_WIDTH / 2.0f - rect.w / 2.0f;
         rect.y = WINDOW_HEIGHT - rect.h - 25.0f;
-        game->end_button = CreateButton("Suivant", &rect);
+        game->end_button = CreateButton("Suivant", &rect, &BACKGROUND_COLOR);
     }
     
     float base_height = 260.0f;
@@ -207,17 +241,17 @@ GameState* CreateGame(GameType type, int streak)
     for (int i = 0; i < 10; i++)
     {
         SDL_FRect rect = {2.0f + key_size * i, base_height, key_size, key_size};
-        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect);
+        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect, &BACKGROUND_COLOR);
     }
     for (int i = 10; i < 20; i++)
     {
         SDL_FRect rect = {2.0f + key_size * (i - 10), base_height + key_size, key_size, key_size};
-        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect);
+        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect, &BACKGROUND_COLOR);
     }
     for (int i = 20; i < 28; i++)
     {
         SDL_FRect rect = {2.0f + key_size * (i - 19), base_height + key_size * 2.0f, key_size, key_size};
-        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect);
+        game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect, &BACKGROUND_COLOR);
     }
     
     return game;

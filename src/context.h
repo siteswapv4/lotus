@@ -12,6 +12,8 @@
 #define WINDOW_WIDTH 225
 #define WINDOW_HEIGHT 400
 
+extern const SDL_Color BACKGROUND_COLOR;
+
 /* Valid for the lifetime of the app */
 extern SDL_Window* window;
 extern SDL_Renderer* renderer;

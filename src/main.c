@@ -8,8 +8,6 @@
 
 /* All strings must be ASCII */
 
-const SDL_Color BACKGROUND_COLOR = {0x2E, 0x00, 0x6C, 255};
-
 typedef enum AppPhase
 {
     APP_PHASE_MENU,

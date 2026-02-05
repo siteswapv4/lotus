@@ -16,9 +16,9 @@ MenuState* CreateMenu()
     SDL_FRect rect = {0.0f, 0.0f, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 10};
     rect.x = WINDOW_WIDTH / 2 - rect.w / 2;
     rect.y = WINDOW_HEIGHT / 2 - rect.h / 2;
-    menu->daily_button = CreateButton("Mot du jour", &rect);
+    menu->daily_button = CreateButton("Mot du jour", &rect, &BACKGROUND_COLOR);
     rect.y += 75.0f;
-    menu->endless_button = CreateButton("Infini", &rect);  
+    menu->endless_button = CreateButton("Infini", &rect, &BACKGROUND_COLOR);  
     
     return menu;
 }

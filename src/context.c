@@ -1,6 +1,8 @@
 #include "context.h"
 #include "word.h"
 
+const SDL_Color BACKGROUND_COLOR = {0x2E, 0x00, 0x6C, 255};
+
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 
