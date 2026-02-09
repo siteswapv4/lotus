@@ -5,6 +5,34 @@ static int num_words = 0;
 static char** words = NULL;
 static int daily_word_index = 0;
 
+static int num_seven_letter_words = 0;
+static char** seven_letter_words = NULL;
+
+static int num_height_letter_words = 0;
+static char** height_letter_words = NULL;
+
+static int num_nine_letter_words = 0;
+static char** nine_letter_words = NULL;
+
+static bool seven_letters = true;
+static bool height_letters = true;
+static bool nine_letters = true;
+
+void EnableSevenLetterWords(bool enable)
+{
+    seven_letters = enable;
+}
+
+void EnableHeightLetterWords(bool enable)
+{
+    height_letters = enable;
+}
+
+void EnableNineLetterWords(bool enable)
+{
+    nine_letters = enable;
+}
+
 void LoadWords()
 {
     char* path = NULL;
@@ -17,6 +45,15 @@ void LoadWords()
     char* start = SDL_strchr(words_file, '\n') + 1;
     char* end = SDL_strchr(start, '\n');
 
+    /* This takes a few mb at most but could be optimized */
+    seven_letter_words = SDL_malloc(num_words * sizeof(char*));
+    height_letter_words = SDL_malloc(num_words * sizeof(char*));
+    nine_letter_words = SDL_malloc(num_words * sizeof(char*));
+
+    num_seven_letter_words = 0;
+    num_height_letter_words = 0;
+    num_nine_letter_words = 0;
+
     for (int i = 0; i < num_words; i++)
     {
         words[i] = start;
@@ -26,6 +63,24 @@ void LoadWords()
             start = end + 1;
             end = SDL_strchr(start, '\n');
         }
+
+        size_t length = SDL_strlen(words[i]);
+        if (length == 7)
+        {
+            seven_letter_words[num_seven_letter_words] = words[i];
+            num_seven_letter_words++;
+        }
+        else if (length == 8)
+        {
+            height_letter_words[num_height_letter_words] = words[i];
+            num_height_letter_words++;
+        }
+        else if (length == 9)
+        {
+            nine_letter_words[num_nine_letter_words] = words[i];
+            num_nine_letter_words++;
+        }
+        
     }
 }
 
@@ -79,12 +134,41 @@ const char* GetDailyWord()
 
 const char* GetRandomWord()
 {
-    return words[SDL_rand(num_words)];
+    int num_categories = 0;
+    char** categories[3];
+    int categories_length[3];
+
+    if (seven_letters)
+    {
+        categories[num_categories] = seven_letter_words;
+        categories_length[num_categories] = num_seven_letter_words;
+        num_categories++;
+    }
+    if (height_letters)
+    {
+        categories[num_categories] = height_letter_words;
+        categories_length[num_categories] = num_height_letter_words;
+        num_categories++;
+    }
+    if (nine_letters)
+    {
+        categories[num_categories] = nine_letter_words;
+        categories_length[num_categories] = num_nine_letter_words;
+        num_categories++;
+    }
+
+    int random = SDL_rand(num_categories);
+    return categories[random][SDL_rand(categories_length[random])];
 }
 
 void QuitWords()
 {
     if (!words_file) return;
+
+    if (seven_letter_words) SDL_free(seven_letter_words);
+    if (height_letter_words) SDL_free(height_letter_words);
+    if (nine_letter_words) SDL_free(nine_letter_words);
+    if (words) SDL_free(words);
 
     SDL_free(words_file);
     words_file = NULL;

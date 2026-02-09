@@ -50,6 +50,7 @@ typedef struct GameState
     
     Button* end_button;
     Button* back_button;
+    Button* forfeit_button;
     
     Button* buttons[NUM_KEYBOARD_BUTTONS];
     
@@ -253,6 +254,8 @@ GameState* CreateGame(GameType type, int streak)
         SDL_FRect rect = {2.0f + key_size * (i - 19), base_height + key_size * 2.0f, key_size, key_size};
         game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect, &BACKGROUND_COLOR);
     }
+
+    game->forfeit_button = CreateButton("FF", &(SDL_FRect){WINDOW_WIDTH - 25.0f, 5.0f, 20.0f, 20.0f}, &BACKGROUND_COLOR);
     
     return game;
 }
@@ -273,6 +276,7 @@ void DestroyGame(GameState* game)
     if (game->grid_texture) SDL_DestroyTexture(game->grid_texture);
     if (game->end_button) DestroyButton(game->end_button);
     if (game->back_button) DestroyButton(game->back_button);
+    if (game->forfeit_button) DestroyButton(game->forfeit_button);
     for (int i = 0; i < NUM_KEYBOARD_BUTTONS; i++)
     {
         if (game->buttons[i]) DestroyButton(game->buttons[i]);
@@ -333,6 +337,11 @@ GameResult GameEvent(GameState* game, SDL_Event* event)
             {
                 if (ButtonClicked(game->buttons[i], &position))
                     ButtonKeyPress(game, GetButtonText(game->buttons[i])[0]);
+            }
+            if (ButtonClicked(game->forfeit_button, &position))
+            {
+                game->ended = true;
+                game->won = false;
             }
         }
     }
@@ -420,6 +429,10 @@ void RenderGame(GameState* game)
                                 game->word);
             SDL_SetRenderScale(renderer, 1.0f, 1.0f);
         }
+    }
+    else
+    {
+        RenderButton(game->forfeit_button);
     }
 }
 
