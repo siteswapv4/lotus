@@ -7,7 +7,7 @@ bool WordExists(const char* word);
 
 void EnableSevenLetterWords(bool enable);
 
-void EnableHeightLetterWords(bool enable);
+void EnableEightLetterWords(bool enable);
 
 void EnableNineLetterWords(bool enable);
 

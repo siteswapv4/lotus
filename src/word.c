@@ -8,14 +8,14 @@ static int daily_word_index = 0;
 static int num_seven_letter_words = 0;
 static char** seven_letter_words = NULL;
 
-static int num_height_letter_words = 0;
-static char** height_letter_words = NULL;
+static int num_eight_letter_words = 0;
+static char** eight_letter_words = NULL;
 
 static int num_nine_letter_words = 0;
 static char** nine_letter_words = NULL;
 
 static bool seven_letters = true;
-static bool height_letters = true;
+static bool eight_letters = true;
 static bool nine_letters = true;
 
 void EnableSevenLetterWords(bool enable)
@@ -23,9 +23,9 @@ void EnableSevenLetterWords(bool enable)
     seven_letters = enable;
 }
 
-void EnableHeightLetterWords(bool enable)
+void EnableEightLetterWords(bool enable)
 {
-    height_letters = enable;
+    eight_letters = enable;
 }
 
 void EnableNineLetterWords(bool enable)
@@ -47,11 +47,11 @@ void LoadWords()
 
     /* This takes a few mb at most but could be optimized */
     seven_letter_words = SDL_malloc(num_words * sizeof(char*));
-    height_letter_words = SDL_malloc(num_words * sizeof(char*));
+    eight_letter_words = SDL_malloc(num_words * sizeof(char*));
     nine_letter_words = SDL_malloc(num_words * sizeof(char*));
 
     num_seven_letter_words = 0;
-    num_height_letter_words = 0;
+    num_eight_letter_words = 0;
     num_nine_letter_words = 0;
 
     for (int i = 0; i < num_words; i++)
@@ -72,15 +72,14 @@ void LoadWords()
         }
         else if (length == 8)
         {
-            height_letter_words[num_height_letter_words] = words[i];
-            num_height_letter_words++;
+            eight_letter_words[num_eight_letter_words] = words[i];
+            num_eight_letter_words++;
         }
         else if (length == 9)
         {
             nine_letter_words[num_nine_letter_words] = words[i];
             num_nine_letter_words++;
         }
-        
     }
 }
 
@@ -144,10 +143,10 @@ const char* GetRandomWord()
         categories_length[num_categories] = num_seven_letter_words;
         num_categories++;
     }
-    if (height_letters)
+    if (eight_letters)
     {
-        categories[num_categories] = height_letter_words;
-        categories_length[num_categories] = num_height_letter_words;
+        categories[num_categories] = eight_letter_words;
+        categories_length[num_categories] = num_eight_letter_words;
         num_categories++;
     }
     if (nine_letters)
@@ -166,7 +165,7 @@ void QuitWords()
     if (!words_file) return;
 
     if (seven_letter_words) SDL_free(seven_letter_words);
-    if (height_letter_words) SDL_free(height_letter_words);
+    if (eight_letter_words) SDL_free(eight_letter_words);
     if (nine_letter_words) SDL_free(nine_letter_words);
     if (words) SDL_free(words);
 
