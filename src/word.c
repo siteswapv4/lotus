@@ -1,36 +1,32 @@
 #include "word.h"
 
+#include "stb_ds.h"
+
 static char* words_file = NULL;
-static int num_words = 0;
-static char** words = NULL;
-static int daily_word_index = 0;
+static const char** words[NUM_LETTER_SPAN] = {0};
+static const char** all_words = NULL;
+static const char* daily_word = NULL;
+static bool enabled_categories[NUM_LETTER_SPAN] = {0};
 
-static int num_seven_letter_words = 0;
-static char** seven_letter_words = NULL;
-
-static int num_eight_letter_words = 0;
-static char** eight_letter_words = NULL;
-
-static int num_nine_letter_words = 0;
-static char** nine_letter_words = NULL;
-
-static bool seven_letters = true;
-static bool eight_letters = true;
-static bool nine_letters = true;
-
-void EnableSevenLetterWords(bool enable)
+const char* GetRandomWordInternal(bool enabled[NUM_LETTER_SPAN])
 {
-    seven_letters = enable;
-}
+    int num_usable = 0;
+    int usable[NUM_LETTER_SPAN] = {0};
 
-void EnableEightLetterWords(bool enable)
-{
-    eight_letters = enable;
-}
+    for (int i = 0; i < NUM_LETTER_SPAN; i++)
+    {
+        if (enabled[i] && words[i] && (arrlen(words[i])))
+        {
+            usable[num_usable] = i;
+            num_usable++;
+        }
+    }
 
-void EnableNineLetterWords(bool enable)
-{
-    nine_letters = enable;
+    if (num_usable <= 0)
+        return NULL;
+
+    int category = usable[SDL_rand(num_usable)];
+    return words[category][SDL_rand(arrlen(words[category]))];
 }
 
 void LoadWords()
@@ -40,23 +36,15 @@ void LoadWords()
     words_file = SDL_LoadFile(path, NULL);
     SDL_free(path);
     
+    int num_words = 0;
     SDL_sscanf(words_file, "%d", &num_words);
-    words = SDL_malloc(num_words * sizeof(char*));
     char* start = SDL_strchr(words_file, '\n') + 1;
     char* end = SDL_strchr(start, '\n');
 
-    /* This takes a few mb at most but could be optimized */
-    seven_letter_words = SDL_malloc(num_words * sizeof(char*));
-    eight_letter_words = SDL_malloc(num_words * sizeof(char*));
-    nine_letter_words = SDL_malloc(num_words * sizeof(char*));
-
-    num_seven_letter_words = 0;
-    num_eight_letter_words = 0;
-    num_nine_letter_words = 0;
-
     for (int i = 0; i < num_words; i++)
     {
-        words[i] = start;
+        arrput(all_words, start);
+
         if (end)
         {
             *end = '\0';
@@ -64,21 +52,10 @@ void LoadWords()
             end = SDL_strchr(start, '\n');
         }
 
-        size_t length = SDL_strlen(words[i]);
-        if (length == 7)
+        size_t length = SDL_strlen(all_words[i]);
+        if ((length >= MIN_NUM_LETTERS) && (length <= MAX_NUM_LETTERS))
         {
-            seven_letter_words[num_seven_letter_words] = words[i];
-            num_seven_letter_words++;
-        }
-        else if (length == 8)
-        {
-            eight_letter_words[num_eight_letter_words] = words[i];
-            num_eight_letter_words++;
-        }
-        else if (length == 9)
-        {
-            nine_letter_words[num_nine_letter_words] = words[i];
-            num_nine_letter_words++;
+            arrput(words[length - MIN_NUM_LETTERS], all_words[i]);
         }
     }
 }
@@ -94,18 +71,21 @@ void SetDailyWord()
     for (int i = 0; i < 10; i++)
         SDL_rand(100);
     
-    daily_word_index = SDL_rand(num_words);
+    bool all_enabled[NUM_LETTER_SPAN];
+    SDL_memset(all_enabled, 1, NUM_LETTER_SPAN * sizeof(bool));
+
+    daily_word = GetRandomWordInternal(all_enabled);
 }
 
 bool WordExists(const char* word)
 {
     int left = 0;
-    int right = num_words - 1;
+    int right = arrlen(all_words) - 1;
 
     while (left <= right)
     {
         int mid = left + (right - left) / 2;
-        int cmp = SDL_strcmp(word, words[mid]);
+        int cmp = SDL_strcmp(word, all_words[mid]);
 
         if (cmp == 0)
             return true;
@@ -122,52 +102,42 @@ void InitWords()
 {
     if (words_file) return;
 
+    SDL_memset(enabled_categories, 1, NUM_LETTER_SPAN * sizeof(bool));
+
     LoadWords();
     SetDailyWord();
 }
 
-const char* GetDailyWord()
-{
-    return words[daily_word_index];
-}
-
 const char* GetRandomWord()
 {
-    int num_categories = 0;
-    char** categories[3];
-    int categories_length[3];
+    return GetRandomWordInternal(enabled_categories);
+}
 
-    if (seven_letters)
-    {
-        categories[num_categories] = seven_letter_words;
-        categories_length[num_categories] = num_seven_letter_words;
-        num_categories++;
-    }
-    if (eight_letters)
-    {
-        categories[num_categories] = eight_letter_words;
-        categories_length[num_categories] = num_eight_letter_words;
-        num_categories++;
-    }
-    if (nine_letters)
-    {
-        categories[num_categories] = nine_letter_words;
-        categories_length[num_categories] = num_nine_letter_words;
-        num_categories++;
-    }
+const char* GetDailyWord()
+{
+    return daily_word;
+}
 
-    int random = SDL_rand(num_categories);
-    return categories[random][SDL_rand(categories_length[random])];
+bool CategoryIsEnabled(int index)
+{
+    return enabled_categories[index];
+}
+
+void EnableCategory(int index, bool enable)
+{
+    enabled_categories[index] = enable;
 }
 
 void QuitWords()
 {
     if (!words_file) return;
 
-    if (seven_letter_words) SDL_free(seven_letter_words);
-    if (eight_letter_words) SDL_free(eight_letter_words);
-    if (nine_letter_words) SDL_free(nine_letter_words);
-    if (words) SDL_free(words);
+    for (int i = 0; i < NUM_LETTER_SPAN; i++)
+    {
+        if (words[i]) arrfree(words[i]);
+        words[i] = NULL;
+    }
+    if (all_words) arrfree(all_words);
 
     SDL_free(words_file);
     words_file = NULL;
