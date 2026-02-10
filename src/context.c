@@ -13,7 +13,11 @@ bool InitContext()
     EXPECT(SDL_Init(SDL_INIT_VIDEO), "%s", SDL_GetError());
     EXPECT(SDL_CreateWindowAndRenderer("Lotus", 450, 800, SDL_WINDOW_RESIZABLE, &window, &renderer), "%s", SDL_GetError());
     SDL_SetRenderLogicalPresentation(renderer, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
+#if defined(SDL_PLATFORM_ANDROID)
+    SDL_SetWindowFullscreen(window, true);
+#endif
+
+    SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
     SDL_StartTextInput(window);
     
     InitWords();

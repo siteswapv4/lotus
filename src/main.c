@@ -88,6 +88,13 @@ SDL_AppResult SDL_AppEvent(void* userdata, SDL_Event* event)
 SDL_AppResult SDL_AppIterate(void* userdata)
 {
     AppState* app = userdata;
+
+    static bool first = true;
+    if (first)
+    {
+        SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
+        first = false;
+    }
     
     SetRenderDrawColor(BACKGROUND_COLOR);
     SDL_RenderClear(renderer);

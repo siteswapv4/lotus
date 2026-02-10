@@ -32,7 +32,11 @@ const char* GetRandomWordInternal(bool enabled[NUM_LETTER_SPAN])
 void LoadWords()
 {
     char* path = NULL;
+#if defined(SDL_PLATFORM_ANDROID)
+    SDL_asprintf(&path, "words.txt");
+#else
     SDL_asprintf(&path, "%s/data/words.txt", SDL_GetBasePath());
+#endif
     words_file = SDL_LoadFile(path, NULL);
     SDL_free(path);
     
