@@ -314,7 +314,7 @@ GameResult GameEvent(GameState* game, SDL_Event* event)
             }
             ConfirmWord(game);
         }
-        else if (event->key.scancode == SDL_SCANCODE_ESCAPE)
+        else if ((event->key.scancode == SDL_SCANCODE_ESCAPE) || (event->key.scancode == SDL_SCANCODE_AC_BACK))
         {
             return GAME_TO_MENU;
         }

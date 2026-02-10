@@ -119,7 +119,7 @@ MenuResult MenuEvent(MenuState* menu, SDL_Event* event)
                     return MENU_TO_ENDLESS;
             }
         }
-        else if (event->key.scancode == SDL_SCANCODE_ESCAPE)
+        else if ((event->key.scancode == SDL_SCANCODE_ESCAPE) || (event->key.scancode == SDL_SCANCODE_AC_BACK))
         {
             if (menu->phase == MENU_PHASE_ENDLESS_SETTINGS)
                 menu->phase = MENU_PHASE_HOMEPAGE;
