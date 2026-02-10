@@ -17,6 +17,7 @@ bool InitContext()
     SDL_SetWindowFullscreen(window, true);
 #endif
 
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
     SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
     SDL_StartTextInput(window);
     

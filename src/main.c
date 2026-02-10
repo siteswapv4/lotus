@@ -22,6 +22,17 @@ typedef struct AppState
     GameState* game;
 }AppState;
 
+/* Fixing SDL issue, only switch to waitevent after the first few iterations */
+void SwitchToWaitEvent()
+{
+    static Uint64 loop_count = 0;
+    loop_count++;
+    if (loop_count == 60)
+    {
+        SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
+    }
+}
+
 SDL_AppResult SDL_AppInit(void** userdata, int argc, char* argv[])
 {
     AppState* app = SDL_calloc(1, sizeof(AppState));
@@ -89,12 +100,7 @@ SDL_AppResult SDL_AppIterate(void* userdata)
 {
     AppState* app = userdata;
 
-    static bool first = true;
-    if (first)
-    {
-        SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
-        first = false;
-    }
+    SwitchToWaitEvent();
     
     SetRenderDrawColor(BACKGROUND_COLOR);
     SDL_RenderClear(renderer);
