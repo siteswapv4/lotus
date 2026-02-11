@@ -34,7 +34,7 @@ typedef struct GameState
 {
     GameType type;
     
-    char* word;
+    const char* word;
     size_t word_length;
 
     int num_tries;
@@ -100,7 +100,7 @@ void Evaluate(GameState* game)
 {
     int occurences[26] = {0};
     
-    for (char* it = game->word; *it; it++)
+    for (const char* it = game->word; *it; it++)
     {
         occurences[(*it) - 'A']++;
     }
@@ -200,9 +200,9 @@ GameState* CreateGame(GameType type, int streak)
     game->type = type;
     
     if (type == GAME_DAILY)
-        game->word = SDL_strdup(GetDailyWord());
+        game->word = GetDailyWord();
     else
-        game->word = SDL_strdup(GetRandomWord());
+        game->word = GetRandomWord();
     game->word_length = SDL_strlen(game->word);
     
     game->num_tries = NUM_TRIES;
@@ -264,7 +264,6 @@ void DestroyGame(GameState* game)
 {
     if (!game) return;
 
-    if (game->word) SDL_free(game->word);
     if (game->grid)
     {
         for (int i = 0; i < game->num_tries; i++)
