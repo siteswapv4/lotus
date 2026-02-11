@@ -153,6 +153,7 @@ void QuitWords()
         words[i] = NULL;
     }
     if (all_words) arrfree(all_words);
+    all_words = NULL;
 
     SDL_free(words_file);
     words_file = NULL;
