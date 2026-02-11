@@ -5,10 +5,16 @@
 static char* words_file = NULL;
 static const char** words[NUM_LETTER_SPAN] = {0};
 static const char** all_words = NULL;
-static const char* daily_word = NULL;
 static bool enabled_categories[NUM_LETTER_SPAN] = {0};
 
-const char* GetRandomWordInternal(bool enabled[NUM_LETTER_SPAN])
+int daily_word_category = 0;
+int daily_word_index = 0;
+
+int random_word_category = 0;
+int random_word_index = 0;
+
+
+void SetRandomWord(bool enabled[NUM_LETTER_SPAN], int* category, int* index)
 {
     int num_usable = 0;
     int usable[NUM_LETTER_SPAN] = {0};
@@ -23,10 +29,10 @@ const char* GetRandomWordInternal(bool enabled[NUM_LETTER_SPAN])
     }
 
     if (num_usable <= 0)
-        return NULL;
+        return;
 
-    int category = usable[SDL_rand(num_usable)];
-    return words[category][SDL_rand(arrlen(words[category]))];
+    *category = usable[SDL_rand(num_usable)];
+    *index = SDL_rand(arrlen(words[*category]));
 }
 
 void LoadWords()
@@ -78,7 +84,7 @@ void SetDailyWord()
     bool all_enabled[NUM_LETTER_SPAN];
     SDL_memset(all_enabled, 1, NUM_LETTER_SPAN * sizeof(bool));
 
-    daily_word = GetRandomWordInternal(all_enabled);
+    SetRandomWord(all_enabled, &daily_word_category, &daily_word_index);
 }
 
 bool WordExists(const char* word)
@@ -114,12 +120,17 @@ void InitWords()
 
 const char* GetRandomWord()
 {
-    return GetRandomWordInternal(enabled_categories);
+    return words[random_word_category][random_word_index];
 }
 
 const char* GetDailyWord()
 {
-    return daily_word;
+    return words[daily_word_category][daily_word_index];
+}
+
+void NextRandomWord()
+{
+    SetRandomWord(enabled_categories, &random_word_category, &random_word_index);
 }
 
 bool CategoryIsEnabled(int index)

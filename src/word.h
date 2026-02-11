@@ -13,6 +13,8 @@ const char* GetDailyWord();
 
 const char* GetRandomWord();
 
+void NextRandomWord();
+
 bool CategoryIsEnabled(int index);
 
 void EnableCategory(int index, bool enable);

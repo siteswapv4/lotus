@@ -34,7 +34,7 @@ typedef struct GameState
 {
     GameType type;
     
-    const char* word;
+    const char* (*get_word)(void);
     size_t word_length;
 
     int num_tries;
@@ -72,7 +72,7 @@ bool Solved(GameState* game, const Cell* solution)
 {
     for (int i = 0; i < game->word_length; i++)
     {
-        if (solution[i].letter != game->word[i])
+        if (solution[i].letter != game->get_word()[i])
             return false;
     }
     return true;
@@ -100,7 +100,7 @@ void Evaluate(GameState* game)
 {
     int occurences[26] = {0};
     
-    for (const char* it = game->word; *it; it++)
+    for (const char* it = game->get_word(); *it; it++)
     {
         occurences[(*it) - 'A']++;
     }
@@ -112,7 +112,7 @@ void Evaluate(GameState* game)
         
         if (occurences[index] > 0)
         {
-            if (game->word[i] == letter)
+            if (game->get_word()[i] == letter)
             {
                 game->grid[game->current_try][i].color = COLORS[LETTER_RIGHT];
                 SetKeyColor(game, letter, LETTER_RIGHT);
@@ -146,7 +146,7 @@ void Evaluate(GameState* game)
     }
     else
     {
-        game->grid[game->current_try][0].letter = game->word[0];
+        game->grid[game->current_try][0].letter = game->get_word()[0];
         game->grid[game->current_try][0].color = COLORS[LETTER_RIGHT];
         game->current_letter++;
     }
@@ -200,10 +200,15 @@ GameState* CreateGame(GameType type, int streak)
     game->type = type;
     
     if (type == GAME_DAILY)
-        game->word = GetDailyWord();
+    {
+        game->get_word = GetDailyWord;
+    }
     else
-        game->word = GetRandomWord();
-    game->word_length = SDL_strlen(game->word);
+    {
+        NextRandomWord();
+        game->get_word = GetRandomWord;
+    }
+    game->word_length = SDL_strlen(game->get_word());
     
     game->num_tries = NUM_TRIES;
     
@@ -217,7 +222,7 @@ GameState* CreateGame(GameType type, int streak)
         }
     }
     
-    game->grid[0][0] = (Cell){game->word[0], COLORS[LETTER_RIGHT]};
+    game->grid[0][0] = (Cell){game->get_word()[0], COLORS[LETTER_RIGHT]};
     game->current_letter++;
     
     game->grid_texture = SDL_CreateTexture(renderer, 
@@ -425,7 +430,7 @@ void RenderGame(GameState* game)
             SDL_RenderDebugText(renderer,
                                 ((WINDOW_WIDTH / 2.0f) - (game->word_length * (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * scale) / 2.0f)) / scale,
                                 (25.0f - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * scale) / 2.0f) / scale,
-                                game->word);
+                                game->get_word());
             SDL_SetRenderScale(renderer, 1.0f, 1.0f);
         }
     }
