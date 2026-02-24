@@ -109,20 +109,23 @@ void Evaluate(GameState* game)
     {
         char letter = game->grid[game->current_try][i].letter;
         int index = letter - 'A';
-        
-        if (occurences[index] > 0)
+
+        if ((occurences[index] > 0) && (game->get_word()[i] == letter))
         {
-            if (game->get_word()[i] == letter)
-            {
-                game->grid[game->current_try][i].color = COLORS[LETTER_RIGHT];
-                SetKeyColor(game, letter, LETTER_RIGHT);
-            }
-            else
-            {
-                game->grid[game->current_try][i].color = COLORS[LETTER_PRESENT];
-                SetKeyColor(game, letter, LETTER_PRESENT);
-            }
-                
+            game->grid[game->current_try][i].color = COLORS[LETTER_RIGHT];
+            SetKeyColor(game, letter, LETTER_RIGHT);
+            occurences[index]--;
+        }
+    }
+    for (int i = 0; i < game->word_length; i++)
+    {
+        char letter = game->grid[game->current_try][i].letter;
+        int index = letter - 'A';
+        
+        if ((occurences[index] > 0) && (game->get_word()[i] != letter))
+        {
+            game->grid[game->current_try][i].color = COLORS[LETTER_PRESENT];
+            SetKeyColor(game, letter, LETTER_PRESENT);
             occurences[index]--;
         }
         else
