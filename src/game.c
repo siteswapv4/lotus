@@ -20,7 +20,7 @@ typedef enum LetterType
 }LetterType;
 
 const SDL_Color COLORS[3] = {{255, 150, 0, 255}, {255, 0, 0, 255}, {150, 150, 150, 255}};
-const SDL_Color EMPTY_COLOR      = {0x2E, 0x00, 0x6C, 255};
+const SDL_Color EMPTY_COLOR = {0x2E, 0x00, 0x6C, 255};
 
 const int KEYBOARD_INDICES[26] = {10, 23, 21, 12, 2, 13, 14, 15, 7, 16, 17, 18, 25, 24, 8, 9, 0, 3, 11, 4, 6, 22, 1, 20, 5, 19};
 
@@ -163,6 +163,9 @@ void AddLetter(GameState* game, char letter)
     
     game->grid[game->current_try][game->current_letter].letter = letter;
     game->current_letter++;
+    
+    if ((game->current_letter == game->word_length) && (WordExists(WordFromGridLine(game, game->current_try))))
+        SetButtonColor(game->buttons[27], &(SDL_Color){0, 255, 0, 255});
 }
 
 void RemoveLetter(GameState* game)
@@ -171,16 +174,19 @@ void RemoveLetter(GameState* game)
     if (game->current_letter <= 1) return;
     game->current_letter--;
     game->grid[game->current_try][game->current_letter].letter = '\0';
+    SetButtonColor(game->buttons[27], &COLORS[2]);
 }
 
 void ConfirmWord(GameState* game)
 {    
+    if (game->ended) return;
     if (game->current_letter != game->word_length) return;
 
     char* word = WordFromGridLine(game, game->current_try);
     if (WordExists(word))
     {
         Evaluate(game);
+        SetButtonColor(game->buttons[27], &COLORS[2]);
     }
     SDL_free(word);
 }
@@ -260,8 +266,12 @@ GameState* CreateGame(GameType type, int streak)
     for (int i = 20; i < 28; i++)
     {
         SDL_FRect rect = {2.0f + key_size * (i - 19), base_height + key_size * 2.0f, key_size, key_size};
+        
         game->buttons[i] = CreateButton((char[]){KEYBOARD_BUTTONS_CHAR[i], '\0'}, &rect, &BACKGROUND_COLOR);
     }
+    
+    SetButtonColor(game->buttons[26], &COLORS[1]);
+    SetButtonColor(game->buttons[27], &COLORS[2]);
 
     game->forfeit_button = CreateButton("FF", &(SDL_FRect){WINDOW_WIDTH - 25.0f, 5.0f, 20.0f, 20.0f}, &BACKGROUND_COLOR);
     
@@ -349,6 +359,7 @@ GameResult GameEvent(GameState* game, SDL_Event* event)
             {
                 game->ended = true;
                 game->won = false;
+                SetButtonColor(game->buttons[27], &COLORS[2]);
             }
         }
     }
